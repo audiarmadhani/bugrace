@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,6 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { registerAction } from '@/app/actions/auth';
+import { formatAuthError } from '@/lib/auth/errors';
 import { useState } from 'react';
 
 const schema = z
@@ -34,7 +36,9 @@ const schema = z
 type FormData = z.infer<typeof schema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -43,13 +47,33 @@ export default function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     setError(null);
+    setSuccess(null);
     const fd = new FormData();
     fd.set('username', data.username);
     fd.set('email', data.email);
     fd.set('password', data.password);
     fd.set('confirmPassword', data.confirmPassword);
-    const result = await registerAction(fd);
-    if (result?.error) setError(result.error);
+
+    try {
+      const result = await registerAction(fd);
+
+      if (!result?.ok) {
+        setError(formatAuthError(result?.error ?? 'Registration failed.'));
+        return;
+      }
+
+      if (result.needsEmailConfirmation) {
+        setSuccess(
+          'Account created! Check your email for a confirmation link, then sign in.'
+        );
+        return;
+      }
+
+      router.push('/dashboard');
+      router.refresh();
+    } catch (e) {
+      setError(formatAuthError(e));
+    }
   }
 
   return (
@@ -65,6 +89,9 @@ export default function RegisterPage() {
         <CardContent className="space-y-4">
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</p>
+          )}
+          {success && (
+            <p className="text-sm text-emerald-700 bg-emerald-50 p-3 rounded-md">{success}</p>
           )}
           <div className="space-y-2">
             <Label htmlFor="username">Username</Label>

@@ -1,39 +1,65 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/db/server';
+import { createAdminClient } from '@/lib/db/admin';
 import { createSubmission, type SubmitBugInput } from '@/services/submission-service';
+import type { AuthActionResult } from '@/lib/auth/errors';
 import type { SubmissionResult } from '@/types';
 
-export async function loginAction(formData: FormData) {
+export async function loginAction(formData: FormData): Promise<AuthActionResult> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
-  redirect('/dashboard');
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
-export async function registerAction(formData: FormData) {
-  const username = formData.get('username') as string;
-  const email = formData.get('email') as string;
+export async function registerAction(formData: FormData): Promise<AuthActionResult> {
+  const username = (formData.get('username') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
 
+  if (!username || username.length < 3) {
+    return { ok: false, error: 'Username must be at least 3 characters.' };
+  }
+
   if (password !== confirmPassword) {
-    return { error: 'Passwords do not match.' };
+    return { ok: false, error: 'Passwords do not match.' };
+  }
+
+  const admin = createAdminClient();
+  const { data: existingProfile } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (existingProfile) {
+    return { ok: false, error: 'Username is already taken.' };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { username } },
   });
 
-  if (error) return { error: error.message };
-  redirect('/dashboard');
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  if (data.session) {
+    return { ok: true };
+  }
+
+  return {
+    ok: true,
+    needsEmailConfirmation: true,
+  };
 }
 
 export async function submitBugAction(input: SubmitBugInput): Promise<SubmissionResult> {

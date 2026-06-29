@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,6 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { loginAction } from '@/app/actions/auth';
+import { formatAuthError } from '@/lib/auth/errors';
 import { useState } from 'react';
 
 const schema = z.object({
@@ -27,6 +29,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const {
     register,
@@ -39,8 +42,18 @@ export default function LoginPage() {
     const fd = new FormData();
     fd.set('email', data.email);
     fd.set('password', data.password);
-    const result = await loginAction(fd);
-    if (result?.error) setError(result.error);
+
+    try {
+      const result = await loginAction(fd);
+      if (!result?.ok) {
+        setError(formatAuthError(result?.error ?? 'Login failed.'));
+        return;
+      }
+      router.push('/dashboard');
+      router.refresh();
+    } catch (e) {
+      setError(formatAuthError(e));
+    }
   }
 
   return (
