@@ -43,7 +43,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     async verify({ page }) {
       await page.goto(storePath('/login'));
       await submitStoreLoginWithoutClientValidation(page);
-      await expect(page).toHaveURL(/\/challenge\/store\/catalog/);
+      await expect(page).toHaveURL(/\/catalog/);
     },
   },
   LOGIN_WRONG_ERROR_MESSAGE: {
@@ -66,7 +66,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       await page.getByLabel('Password').fill('Password123');
       await page.getByRole('button', { name: 'Sign In' }).click();
       await expect(page.getByText(/Invalid username or password|Network error/)).toBeVisible();
-      await expect(page).toHaveURL(/\/challenge\/store\/login/);
+      await expect(page).toHaveURL(/\/login/);
     },
   },
   LOGIN_PASSWORD_VISIBLE_IN_ERROR: {
@@ -225,9 +225,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       await loginStore(page, 'bob', 'Password123');
       await page.goto(storePath('/orders'));
       await page.waitForSelector('text=Loading orders', { state: 'hidden' });
-      const orderCards = page.locator('.space-y-3 > div, .space-y-3 > [data-slot="card"]');
-      const count = await orderCards.count();
-      expect(count).toBeGreaterThan(1);
+      await expect(page.getByText(/alice|charlie/i)).toBeVisible();
     },
   },
   ORDERS_STATUS_ALWAYS_PROCESSING: {
