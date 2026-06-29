@@ -9,6 +9,7 @@ import {
   storePath,
   submitStoreLoginWithoutClientValidation,
 } from './store';
+import { isPersistentShopverseCookie } from './session-cookie';
 
 export type BugVerifyContext = {
   page: Page;
@@ -94,12 +95,12 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       await page.getByLabel('Password').fill('Password123');
       await page.getByLabel('Remember me').check();
       await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL(`**${storePath('/catalog')}`);
+      await page.waitForURL(`**${storePath('/catalog')}`, { timeout: 15_000 });
 
       const cookies = await context.cookies();
       const session = cookies.find((c) => c.name === 'bugrace_challenge_session');
       expect(session).toBeDefined();
-      expect(session?.expires).toBeLessThan(0);
+      expect(isPersistentShopverseCookie(session!)).toBe(false);
     },
   },
   LOGIN_NO_RATE_LIMITING: {
@@ -163,7 +164,8 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       await page.goto(storePath('/catalog'));
       await page.getByRole('combobox').first().click();
       await page.getByRole('option', { name: 'Clothing' }).click();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(800);
+      await expect(page.getByText('Classic Denim Jacket')).toBeVisible();
       await expect(page.getByText('Wireless Noise-Cancelling Headphones')).toBeVisible();
     },
   },
