@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { storeLoginAction } from '@/app/actions/store';
+import { CHALLENGE_ACCOUNTS } from '@/data/challenge-accounts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+const customerAccounts = Object.values(CHALLENGE_ACCOUNTS).filter((a) => a.role === 'customer');
+const adminAccount = Object.values(CHALLENGE_ACCOUNTS).find((a) => a.role === 'admin');
 
 export default function StoreLoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +62,26 @@ export default function StoreLoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
+
+          <div className="mt-6 rounded-lg bg-emerald-50 border border-emerald-100 p-4 space-y-3 text-sm">
+            <p className="font-semibold text-emerald-900">Test accounts</p>
+            <div>
+              <p className="text-emerald-800 mb-1">Customers</p>
+              {customerAccounts.map((account) => (
+                <p key={account.username} className="font-mono text-emerald-700">
+                  {account.username} / {account.password}
+                </p>
+              ))}
+            </div>
+            {adminAccount && (
+              <div>
+                <p className="text-emerald-800 mb-1">Admin</p>
+                <p className="font-mono text-emerald-700">
+                  {adminAccount.username} / {adminAccount.password}
+                </p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
