@@ -1,5 +1,10 @@
 import { updateSession } from '@/lib/db/middleware';
-import { getAppMode, getPlatformUrl, toShopversePublicPath } from '@/lib/config/app';
+import {
+  getAppMode,
+  getPlatformUrl,
+  getStoreInternalPath,
+  toShopversePublicPath,
+} from '@/lib/config/app';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes = [
@@ -45,6 +50,7 @@ function isStorePublicPath(pathname: string): boolean {
 }
 
 function isPlatformOnlyOnStore(pathname: string): boolean {
+  if (getStoreInternalPath(pathname)) return false;
   if (pathname === '/register') return true;
   if (platformOnlyPrefixes.some((prefix) => pathname.startsWith(prefix))) return true;
   if (pathname === '/challenge' || pathname.startsWith('/challenge/')) {
@@ -122,6 +128,13 @@ export async function middleware(request: NextRequest) {
 
     if (isAuthRoute && user) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  }
+
+  if (appMode === 'store') {
+    const internalPath = getStoreInternalPath(pathname);
+    if (internalPath) {
+      return NextResponse.rewrite(new URL(internalPath, request.url));
     }
   }
 

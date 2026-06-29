@@ -30,18 +30,37 @@ export function getPlatformUrl(): string {
   );
 }
 
-const STORE_PATH_MAP: Record<string, string> = {
-  '/challenge/store/login': '/login',
-  '/challenge/store/catalog': '/catalog',
-  '/challenge/store/cart': '/cart',
-  '/challenge/store/checkout': '/checkout',
-  '/challenge/store/orders': '/orders',
-  '/challenge/store/profile': '/profile',
+const STORE_PUBLIC_TO_INTERNAL: Record<string, string> = {
+  '/login': '/challenge/store/login',
+  '/catalog': '/challenge/store/catalog',
+  '/cart': '/challenge/store/cart',
+  '/checkout': '/challenge/store/checkout',
+  '/orders': '/challenge/store/orders',
+  '/profile': '/challenge/store/profile',
 };
 
+const STORE_INTERNAL_TO_PUBLIC: Record<string, string> = Object.fromEntries(
+  Object.entries(STORE_PUBLIC_TO_INTERNAL).map(([publicPath, internalPath]) => [
+    internalPath,
+    publicPath,
+  ])
+);
+
+/** Map a ShopVerse public URL to its internal app route (store deploy only). */
+export function getStoreInternalPath(publicPath: string): string | null {
+  if (STORE_PUBLIC_TO_INTERNAL[publicPath]) {
+    return STORE_PUBLIC_TO_INTERNAL[publicPath];
+  }
+  const productMatch = publicPath.match(/^\/product\/(.+)$/);
+  if (productMatch) {
+    return `/challenge/store/product/${productMatch[1]}`;
+  }
+  return null;
+}
+
 export function toShopversePublicPath(internalPath: string): string {
-  if (STORE_PATH_MAP[internalPath]) {
-    return `${getShopverseUrl()}${STORE_PATH_MAP[internalPath]}`;
+  if (STORE_INTERNAL_TO_PUBLIC[internalPath]) {
+    return `${getShopverseUrl()}${STORE_INTERNAL_TO_PUBLIC[internalPath]}`;
   }
   const productMatch = internalPath.match(/^\/challenge\/store\/product\/(.+)$/);
   if (productMatch) {
