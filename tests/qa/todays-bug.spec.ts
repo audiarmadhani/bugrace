@@ -5,8 +5,7 @@ import {
   type TodayChallenge,
 } from '../helpers/challenge';
 import { getBugScenario } from '../helpers/bug-scenarios';
-import { loginPlatform, startTodaysChallenge } from '../helpers/platform';
-import { loginStore } from '../helpers/store';
+import { loginShopVerse } from '../player/helpers/shopverse';
 
 let todayChallenge: TodayChallenge | null = null;
 
@@ -45,9 +44,7 @@ test.describe('Today\'s bug — QA reveal & verify', () => {
       description: scenario.manualSteps.join('\n'),
     });
 
-    // Platform gate: must start challenge before store routes apply today's bug.
-    await loginPlatform(page);
-    await startTodaysChallenge(page);
+    await loginShopVerse(page);
 
     if (scenario.automated && scenario.verify) {
       await scenario.verify({ page, context });
@@ -55,9 +52,7 @@ test.describe('Today\'s bug — QA reveal & verify', () => {
       return;
     }
 
-    // Manual scenario: still enter the store so you can explore interactively.
-    await loginStore(page, 'alice', 'Password123');
-    await expect(page).toHaveURL(/\/challenge\/store\/catalog/);
+    await expect(page.getByRole('heading', { name: 'Product Catalog' })).toBeVisible();
 
     console.log(
       [

@@ -14,7 +14,10 @@ export function StoreLogoutButton() {
     if (result.clearCart) {
       clearCart();
     }
-    router.push('/challenge/store/login');
+    const loginPath = window.location.pathname.includes('/challenge/store')
+      ? '/challenge/store/login'
+      : '/login';
+    router.push(loginPath);
     router.refresh();
   }
 

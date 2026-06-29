@@ -7,6 +7,10 @@ import { SEASON_LENGTH_DAYS } from '@/lib/constants';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
+  if (process.env.APP_MODE === 'store') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

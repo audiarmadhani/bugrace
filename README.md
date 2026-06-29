@@ -84,10 +84,17 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## Scripts
 
-- `npm run dev` — Development server
+- `npm run dev` — Development server (both platform + store routes)
+- `npm run dev:store` — ShopVerse only (`APP_MODE=store`)
 - `npm run build` — Production build
 - `npm run seed` — Seed season + challenge data
 - `npm run validate:bugs` — Validate bug registry
+- `npm run test:player` — Player Playwright tests (ShopVerse only)
+- `npm run test:bug` — QA: reveal + verify today's bug
+
+## Split deployment
+
+BugRace (platform) and ShopVerse (store) can run as **two Vercel projects** from this repo. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#12-split-deploy-bugrace--shopverse) and [docs/PLAYER_TESTING.md](docs/PLAYER_TESTING.md).
 
 ## Architecture Notes
 

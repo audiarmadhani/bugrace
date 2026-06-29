@@ -7,10 +7,15 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test.local') });
 dotenv.config({ path: path.resolve(__dirname, '.env.local') });
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000';
+const baseURL =
+  process.env.SHOPVERSE_URL ??
+  process.env.NEXT_PUBLIC_SHOPVERSE_URL ??
+  process.env.PLAYWRIGHT_BASE_URL ??
+  'http://127.0.0.1:3000';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['**/player/**'],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

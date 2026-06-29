@@ -15,6 +15,7 @@ import {
   incrementStoreLoginFails,
   STORE_LOGIN_RATE_LIMIT,
 } from '@/lib/auth/store-login-failures';
+import { getStoreCatalogPath } from '@/lib/config/app';
 import { CHALLENGE_ACCOUNTS, validateChallengeCredentials } from '@/data/challenge-accounts';
 import {
   createChallengeOrder,
@@ -93,7 +94,7 @@ export async function storeLoginAction(formData: FormData) {
     { maxAge }
   );
 
-  redirect('/challenge/store/catalog');
+  redirect(getStoreCatalogPath());
 }
 
 export async function storeLogoutAction(): Promise<{ clearCart: boolean }> {

@@ -52,14 +52,16 @@ Users
 
 ## 2. Prerequisites
 
-| Tool | Purpose |
-|------|---------|
-| [Supabase account](https://supabase.com) | Database + auth |
-| [Vercel account](https://vercel.com) | App hosting |
-| [cron-job.org account](https://cron-job.org) | Free external cron |
-| [GitHub account](https://github.com) | Source control for Vercel |
-| Node.js 20+ | Local CLI commands |
-| Supabase CLI | Push migrations |
+
+| Tool                                         | Purpose                   |
+| -------------------------------------------- | ------------------------- |
+| [Supabase account](https://supabase.com)     | Database + auth           |
+| [Vercel account](https://vercel.com)         | App hosting               |
+| [cron-job.org account](https://cron-job.org) | Free external cron        |
+| [GitHub account](https://github.com)         | Source control for Vercel |
+| Node.js 20+                                  | Local CLI commands        |
+| Supabase CLI                                 | Push migrations           |
+
 
 Install the Supabase CLI if you don't have it:
 
@@ -104,7 +106,7 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 ```
 
-This applies [`supabase/migrations/001_initial.sql`](../supabase/migrations/001_initial.sql), which creates:
+This applies `[supabase/migrations/001_initial.sql](../supabase/migrations/001_initial.sql)`, which creates:
 
 - `profiles`, `seasons`, `season_user_points`, `daily_challenges`, `submissions`
 - `challenge_views`, `user_badges`
@@ -125,11 +127,13 @@ Verify in **Supabase → Table Editor** that tables exist.
 
 Go to **Authentication → URL Configuration**:
 
-| Setting | Value |
-|---------|-------|
-| **Site URL** | `https://your-app.vercel.app` (update after first Vercel deploy if unknown yet) |
-| **Redirect URLs** | `https://your-app.vercel.app/**` |
-| | `http://localhost:3000/**` (optional, for local dev) |
+
+| Setting           | Value                                                                           |
+| ----------------- | ------------------------------------------------------------------------------- |
+| **Site URL**      | `https://your-app.vercel.app` (update after first Vercel deploy if unknown yet) |
+| **Redirect URLs** | `https://your-app.vercel.app/`**                                                |
+|                   | `http://localhost:3000/**` (optional, for local dev)                            |
+
 
 #### Auth settings (recommended for production)
 
@@ -140,11 +144,13 @@ Go to **Authentication → URL Configuration**:
 
 Go to **Project Settings → API**:
 
-| Env variable | Supabase label | Secret? |
-|--------------|----------------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | No |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `anon` `public` | No (public by design) |
-| `SUPABASE_SERVICE_ROLE_KEY` | `service_role` `secret` | **Yes — never expose to browser** |
+
+| Env variable                    | Supabase label          | Secret?                           |
+| ------------------------------- | ----------------------- | --------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Project URL             | No                                |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `anon` `public`         | No (public by design)             |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `service_role` `secret` | **Yes — never expose to browser** |
+
 
 ---
 
@@ -164,7 +170,6 @@ Save the output for:
 
 - `CRON_SECRET`
 - `CHALLENGE_SESSION_SECRET`
-- `CHALLENGE_START_COOKIE_SECRET`
 
 Each must be at least 32 characters.
 
@@ -198,12 +203,14 @@ Seed complete.
 
 In **Supabase → Table Editor**:
 
-| Table | What to check |
-|-------|---------------|
-| `seasons` | 1 row, `season_number = 1`, 30-day date range |
-| `daily_challenges` | 30 rows, today’s row has `status = OPEN` |
-| `challenge_profiles` | 4 rows: alice, bob, charlie, admin |
-| `challenge_orders` | 4 sample orders (one per account) |
+
+| Table                | What to check                                 |
+| -------------------- | --------------------------------------------- |
+| `seasons`            | 1 row, `season_number = 1`, 30-day date range |
+| `daily_challenges`   | 30 rows, today’s row has `status = OPEN`      |
+| `challenge_profiles` | 4 rows: alice, bob, charlie, admin            |
+| `challenge_orders`   | 4 sample orders (one per account)             |
+
 
 ---
 
@@ -239,14 +246,15 @@ Ensure `.env.local` and `.env.production.seed` are **not** committed (covered by
 
 Before deploying, open **Environment Variables** and add all six variables for **Production** (and Preview if you want preview deploys to work):
 
-| Variable | Example / notes |
-|----------|-----------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://abcdefgh.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGci...` (anon key) |
-| `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGci...` (service role — **secret**) |
-| `CRON_SECRET` | Output of `openssl rand -base64 32` |
-| `CHALLENGE_SESSION_SECRET` | Output of `openssl rand -base64 32` |
-| `CHALLENGE_START_COOKIE_SECRET` | Output of `openssl rand -base64 32` |
+
+| Variable                        | Example / notes                           |
+| ------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | `https://abcdefgh.supabase.co`            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGci...` (anon key)                  |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `eyJhbGci...` (service role — **secret**) |
+| `CRON_SECRET`                   | Output of `openssl rand -base64 32`       |
+| `CHALLENGE_SESSION_SECRET`      | Output of `openssl rand -base64 32`       |
+
 
 > **Important:** Use the **same** `CRON_SECRET` in Vercel and cron-job.org (configured in the next section).
 
@@ -265,7 +273,7 @@ https://bugrace.vercel.app
 Return to **Supabase → Authentication → URL Configuration** and set:
 
 - **Site URL** → `https://bugrace.vercel.app`
-- **Redirect URLs** → `https://bugrace.vercel.app/**`
+- **Redirect URLs** → `https://bugrace.vercel.app/`**
 
 Save changes.
 
@@ -277,7 +285,7 @@ If you use a custom domain, update Supabase redirect URLs to match.
 
 ### 6.6 Vercel Cron — not used
 
-The repo includes [`vercel.json`](../vercel.json) with a Vercel Cron definition. **This guide uses cron-job.org instead**, which works on Vercel's free Hobby plan.
+The repo includes `[vercel.json](../vercel.json)` with a Vercel Cron definition. **This guide uses cron-job.org instead**, which works on Vercel's free Hobby plan.
 
 You can leave `vercel.json` as-is (Vercel Cron is ignored on Hobby) or remove the `crons` block later. Production scheduling is handled entirely by cron-job.org.
 
@@ -295,14 +303,16 @@ You can leave `vercel.json` as-is (Vercel Cron is ignored on Hobby) or remove th
 1. Click **Cronjobs → Create cronjob**
 2. Configure:
 
-| Field | Value |
-|-------|-------|
-| **Title** | BugRace Daily Challenge Rotation |
-| **URL** | `https://<your-vercel-domain>/api/cron/rotate-challenge` |
-| **Schedule** | Every day at **00:00** |
-| **Timezone** | **UTC** |
-| **Request method** | `GET` |
-| **Enabled** | Yes |
+
+| Field              | Value                                                    |
+| ------------------ | -------------------------------------------------------- |
+| **Title**          | BugRace Daily Challenge Rotation                         |
+| **URL**            | `https://<your-vercel-domain>/api/cron/rotate-challenge` |
+| **Schedule**       | Every day at **00:00**                                   |
+| **Timezone**       | **UTC**                                                  |
+| **Request method** | `GET`                                                    |
+| **Enabled**        | Yes                                                      |
+
 
 ### 7.3 Add the authorization header
 
@@ -311,9 +321,11 @@ cron-job.org must send the same secret Vercel expects.
 1. In the cron job editor, open **Advanced** or **Request headers**
 2. Add a header:
 
-| Header name | Header value |
-|-------------|--------------|
+
+| Header name     | Header value                |
+| --------------- | --------------------------- |
 | `Authorization` | `Bearer <your-CRON_SECRET>` |
+
 
 Replace `<your-CRON_SECRET>` with the exact value set in Vercel env vars (including no extra spaces).
 
@@ -352,9 +364,11 @@ HTTP/1.1 200 OK
 
 ### 7.5 Schedule reference
 
-| Cron expression | Meaning |
-|---------------|---------|
-| `0 0 * * *` | Every day at 00:00 UTC |
+
+| Cron expression | Meaning                |
+| --------------- | ---------------------- |
+| `0 0 * * `*     | Every day at 00:00 UTC |
+
 
 cron-job.org UI: set **hour = 0**, **minute = 0**, **timezone = UTC**.
 
@@ -372,7 +386,7 @@ Work through this checklist after deploy:
 
 ### Platform auth
 
-- [ ] Open `https://your-app.vercel.app/register`
+- [x] Open `https://your-app.vercel.app/register`
 - [ ] Create account (e.g. `tester@yourcompany.com`)
 - [ ] Confirm redirect to `/dashboard`
 - [ ] Verify row in Supabase `profiles` table
@@ -461,11 +475,13 @@ Push to `main` — Vercel auto-deploys.
 
 ### Submissions rejected
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| "Submissions are closed" | Challenge not `OPEN` | Check `daily_challenges.status` for today |
-| "Already submitted" | UNIQUE constraint | Expected — one submission per user per day |
-| RLS error | User not logged in | Log in to platform before submitting |
+
+| Symptom                  | Cause                | Fix                                        |
+| ------------------------ | -------------------- | ------------------------------------------ |
+| "Submissions are closed" | Challenge not `OPEN` | Check `daily_challenges.status` for today  |
+| "Already submitted"      | UNIQUE constraint    | Expected — one submission per user per day |
+| RLS error                | User not logged in   | Log in to platform before submitting       |
+
 
 ### Cron returns 401
 
@@ -481,7 +497,7 @@ Push to `main` — Vercel auto-deploys.
 
 ### Images not loading
 
-Product images use `picsum.photos`. If blocked by corporate firewall, replace URLs in [`data/products.ts`](../data/products.ts) with your own CDN.
+Product images use `picsum.photos`. If blocked by corporate firewall, replace URLs in `[data/products.ts](../data/products.ts)` with your own CDN.
 
 ### Challenge store data missing
 
@@ -493,14 +509,78 @@ Re-run seed — it upserts `challenge_profiles` and only inserts orders if none 
 
 Before going live with real users:
 
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` is **only** in Vercel env vars (never `NEXT_PUBLIC_`)
-- [ ] `CRON_SECRET` is a strong random string, not the dev default
-- [ ] `CHALLENGE_SESSION_SECRET` and `CHALLENGE_START_COOKIE_SECRET` are unique production values
-- [ ] cron-job.org account uses a strong password + 2FA if available
-- [ ] Supabase **Confirm email** enabled for production signups
-- [ ] Supabase database password stored in a password manager
-- [ ] RLS enabled on all tables (done by migration)
-- [ ] Service role key never committed to git
+- [x] `SUPABASE_SERVICE_ROLE_KEY` is **only** in Vercel env vars (never `NEXT_PUBLIC_`)
+- [x] `CRON_SECRET` is a strong random string, not the dev default
+- [x] `CHALLENGE_SESSION_SECRET` is a unique production value
+- [x] cron-job.org account uses a strong password + 2FA if available
+- [x] Supabase **Confirm email** enabled for production signups
+- [x] Supabase database password stored in a password manager
+- [x] RLS enabled on all tables (done by migration)
+- [x] Service role key never committed to git
+
+---
+
+## 12. Split deploy: BugRace + ShopVerse
+
+Run **two Vercel projects** from the same GitHub repo — one for BugRace (platform), one for ShopVerse (store).
+
+### Architecture
+
+```
+BugRace (APP_MODE=platform)          ShopVerse (APP_MODE=store)
+NEXT_PUBLIC_SHOPVERSE_URL ──────────►  Public store URL
+◄── NEXT_PUBLIC_PLATFORM_URL         Links back for submit
+
+Both ──► Same Supabase project (daily_challenges, store data)
+Cron ──► Platform project only (/api/cron/rotate-challenge)
+```
+
+### Vercel project: BugRace (platform)
+
+| Variable | Example |
+|----------|---------|
+| `APP_MODE` | `platform` |
+| `NEXT_PUBLIC_SHOPVERSE_URL` | `https://shop.yourdomain.com` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role |
+| `CRON_SECRET` | Random secret |
+| `CHALLENGE_SESSION_SECRET` | Random secret |
+
+### Vercel project: ShopVerse (store)
+
+| Variable | Example |
+|----------|---------|
+| `APP_MODE` | `store` |
+| `NEXT_PUBLIC_PLATFORM_URL` | `https://bugrace.yourdomain.com` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Same Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role (orders/profiles) |
+| `CHALLENGE_SESSION_SECRET` | Same or unique per store |
+
+**Do not** configure cron on the ShopVerse project.
+
+### ShopVerse public paths
+
+When `APP_MODE=store`, these URLs work:
+
+- `/login`, `/catalog`, `/cart`, `/checkout`, `/orders`, `/profile`, `/product/:id`
+
+### Player workflow
+
+1. Test ShopVerse with any tool (see `docs/PLAYER_TESTING.md`)
+2. Submit on BugRace → `/submit-bug`
+3. Leaderboard: accuracy first, earliest `submitted_at` wins ties
+
+### Local dev
+
+```bash
+# Both apps (default)
+npm run dev
+
+# ShopVerse only
+npm run dev:store
+```
 
 ---
 
@@ -514,25 +594,31 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 CRON_SECRET=<random-32+-chars>
 CHALLENGE_SESSION_SECRET=<random-32+-chars>
-CHALLENGE_START_COOKIE_SECRET=<random-32+-chars>
+APP_MODE=platform|store
+NEXT_PUBLIC_SHOPVERSE_URL=https://your-shopverse-domain.com
+NEXT_PUBLIC_PLATFORM_URL=https://your-bugrace-domain.com
 ```
 
 ### Production URLs
 
-| Service | URL |
-|---------|-----|
-| App | `https://<your-app>.vercel.app` |
-| Cron endpoint | `https://<your-app>.vercel.app/api/cron/rotate-challenge` |
-| Supabase dashboard | `https://supabase.com/dashboard/project/<project-ref>` |
+
+| Service            | URL                                                       |
+| ------------------ | --------------------------------------------------------- |
+| App                | `https://<your-app>.vercel.app`                           |
+| Cron endpoint      | `https://<your-app>.vercel.app/api/cron/rotate-challenge` |
+| Supabase dashboard | `https://supabase.com/dashboard/project/<project-ref>`    |
+
 
 ### Challenge store test accounts
 
-| Username | Password |
-|----------|----------|
-| alice | Password123 |
-| bob | Password123 |
-| charlie | Password123 |
-| admin | Password123 |
+
+| Username | Password    |
+| -------- | ----------- |
+| alice    | Password123 |
+| bob      | Password123 |
+| charlie  | Password123 |
+| admin    | Password123 |
+
 
 ### Useful commands
 
@@ -556,7 +642,8 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 ## Support
 
-- BugRace README: [`README.md`](../README.md)
+- BugRace README: `[README.md](../README.md)`
 - Supabase docs: [https://supabase.com/docs](https://supabase.com/docs)
 - Vercel docs: [https://vercel.com/docs](https://vercel.com/docs)
 - cron-job.org docs: [https://cron-job.org/en/documentation/](https://cron-job.org/en/documentation/)
+

@@ -1,4 +1,5 @@
 import { updateSession } from '@/lib/db/middleware';
+import { getAppMode, getPlatformUrl, toShopversePublicPath } from '@/lib/config/app';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes = [
@@ -12,8 +13,63 @@ const protectedRoutes = [
 
 const authRoutes = ['/login', '/register'];
 
+const platformOnlyPrefixes = [
+  '/dashboard',
+  '/submit-bug',
+  '/leaderboard',
+  '/profile',
+  '/history',
+  '/api/cron',
+];
+
+const storeInternalPrefix = '/challenge/store';
+
+const storeLoginPaths = new Set(['/login', '/challenge/store/login']);
+
+function isStoreProtectedPath(pathname: string): boolean {
+  if (storeLoginPaths.has(pathname)) return false;
+  if (pathname.startsWith('/challenge/store/') && pathname !== '/challenge/store/login') {
+    return true;
+  }
+  if (
+    pathname === '/catalog' ||
+    pathname === '/cart' ||
+    pathname === '/checkout' ||
+    pathname === '/orders' ||
+    pathname === '/profile' ||
+    pathname.startsWith('/product/')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const appMode = getAppMode();
+
+  if (appMode === 'platform') {
+    if (pathname.startsWith(storeInternalPrefix)) {
+      return NextResponse.redirect(toShopversePublicPath(pathname));
+    }
+  }
+
+  if (appMode === 'store') {
+    const isPlatformAuth =
+      pathname === '/login' ||
+      pathname === '/register' ||
+      protectedRoutes.some(
+        (route) =>
+          route !== '/challenge' &&
+          (pathname === route || pathname.startsWith(`${route}/`))
+      ) ||
+      platformOnlyPrefixes.some((prefix) => pathname.startsWith(prefix));
+
+    if (isPlatformAuth) {
+      const target = pathname.startsWith('/api') ? getPlatformUrl() : `${getPlatformUrl()}${pathname}`;
+      return NextResponse.redirect(target);
+    }
+  }
 
   const supabaseResponse = await updateSession(request);
 
@@ -21,17 +77,17 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
   const isAuthRoute = authRoutes.some((route) => pathname === route);
-  const isStoreRoute = pathname.startsWith('/challenge/store');
-  const isStoreLogin = pathname === '/challenge/store/login';
+  const isStoreRoute = isStoreProtectedPath(pathname);
 
-  if (isStoreRoute && !isStoreLogin) {
+  if (isStoreRoute) {
     const session = request.cookies.get('bugrace_challenge_session');
     if (!session) {
-      return NextResponse.redirect(new URL('/challenge/store/login', request.url));
+      const loginPath = appMode === 'store' ? '/login' : '/challenge/store/login';
+      return NextResponse.redirect(new URL(loginPath, request.url));
     }
   }
 
-  if (isProtected || isAuthRoute) {
+  if ((isProtected || isAuthRoute) && appMode !== 'store') {
     const { createServerClient } = await import('@supabase/ssr');
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

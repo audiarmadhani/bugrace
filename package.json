@@ -11,7 +11,9 @@
     "validate:bugs": "tsx scripts/validate-bug-registry.ts",
     "test:e2e": "playwright test",
     "test:bug": "playwright test tests/qa/todays-bug.spec.ts",
-    "test:e2e:ui": "playwright test --ui"
+    "test:player": "playwright test -c playwright.player.config.ts",
+    "test:e2e:ui": "playwright test --ui",
+    "dev:store": "APP_MODE=store next dev"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

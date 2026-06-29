@@ -35,7 +35,9 @@ export default async function LeaderboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Daily Leaderboard</CardTitle>
-            <CardDescription>Top 10 by accuracy score today</CardDescription>
+            <CardDescription>
+              Ranked by accuracy score. Same score? Earlier submission wins.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <LeaderboardTable entries={daily} highlightUserId={user?.id} />

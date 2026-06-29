@@ -6,6 +6,7 @@ import {
   loginStore,
   readGrandTotal,
   setCartItemQuantity,
+  storePath,
   submitStoreLoginWithoutClientValidation,
 } from './store';
 
@@ -40,7 +41,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: login succeeds and redirects to catalog',
     ],
     async verify({ page }) {
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       await submitStoreLoginWithoutClientValidation(page);
       await expect(page).toHaveURL(/\/challenge\/store\/catalog/);
     },
@@ -49,7 +50,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     automated: true,
     manualSteps: ['Enter wrong credentials', 'Bug: error says "Network error" instead of invalid credentials'],
     async verify({ page }) {
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       await page.getByLabel('Username').fill('alice');
       await page.getByLabel('Password').fill('wrongpassword');
       await page.getByRole('button', { name: 'Sign In' }).click();
@@ -60,7 +61,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     automated: true,
     manualSteps: ['Login with "Alice" (capital A) and Password123', 'Bug: login fails despite valid account'],
     async verify({ page }) {
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       await page.getByLabel('Username').fill('Alice');
       await page.getByLabel('Password').fill('Password123');
       await page.getByRole('button', { name: 'Sign In' }).click();
@@ -73,7 +74,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     manualSteps: ['Enter wrong password', 'Bug: error message includes the password you typed'],
     async verify({ page }) {
       const secret = 'SuperSecret99';
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       await page.getByLabel('Username').fill('alice');
       await page.getByLabel('Password').fill(secret);
       await page.getByRole('button', { name: 'Sign In' }).click();
@@ -88,12 +89,12 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: you are logged out despite Remember me being checked',
     ],
     async verify({ page, context }) {
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       await page.getByLabel('Username').fill('alice');
       await page.getByLabel('Password').fill('Password123');
       await page.getByLabel('Remember me').check();
       await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/challenge/store/catalog');
+      await page.waitForURL(`**${storePath('/catalog')}`);
 
       const cookies = await context.cookies();
       const session = cookies.find((c) => c.name === 'bugrace_challenge_session');
@@ -108,7 +109,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: no lockout message (normally locks after 5 attempts)',
     ],
     async verify({ page }) {
-      await page.goto('/challenge/store/login');
+      await page.goto(storePath('/login'));
       for (let i = 0; i < 6; i++) {
         await page.getByLabel('Username').fill('alice');
         await page.getByLabel('Password').fill('wrong');
@@ -127,7 +128,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: "Wireless Noise-Cancelling Headphones" does not appear',
     ],
     async verify({ page }) {
-      await page.goto('/challenge/store/catalog');
+      await page.goto(storePath('/catalog'));
       await page.getByPlaceholder('Search products...').fill('wireless');
       await page.waitForTimeout(500);
       await expect(page.getByText('Wireless Noise-Cancelling Headphones')).toHaveCount(0);
@@ -144,7 +145,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     ],
     async verify({ page }) {
       const highest = [...PRODUCTS].sort((a, b) => b.price - a.price)[0]!;
-      await page.goto('/challenge/store/catalog');
+      await page.goto(storePath('/catalog'));
       await page.getByRole('combobox').nth(1).click();
       await page.getByRole('option', { name: 'Price: Low to High' }).click();
       await page.waitForTimeout(500);
@@ -159,7 +160,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: Electronics products also appear',
     ],
     async verify({ page }) {
-      await page.goto('/challenge/store/catalog');
+      await page.goto(storePath('/catalog'));
       await page.getByRole('combobox').first().click();
       await page.getByRole('option', { name: 'Clothing' }).click();
       await page.waitForTimeout(500);
@@ -170,7 +171,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     automated: true,
     manualSteps: ['Open catalog', 'Bug: first products appear twice in the grid'],
     async verify({ page }) {
-      await page.goto('/challenge/store/catalog');
+      await page.goto(storePath('/catalog'));
       const names = await page.locator('.grid.gap-4 h3').allTextContents();
       const duplicates = names.filter((n, i) => names.indexOf(n) !== i);
       expect(duplicates.length).toBeGreaterThan(0);
@@ -222,7 +223,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     ],
     async verify({ page }) {
       await loginStore(page, 'bob', 'Password123');
-      await page.goto('/challenge/store/orders');
+      await page.goto(storePath('/orders'));
       await page.waitForSelector('text=Loading orders', { state: 'hidden' });
       const orderCards = page.locator('.space-y-3 > div, .space-y-3 > [data-slot="card"]');
       const count = await orderCards.count();
@@ -234,7 +235,7 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
     manualSteps: ['Open My Orders', 'Bug: every order shows status "Processing"'],
     async verify({ page }) {
       await loginStore(page, 'alice', 'Password123');
-      await page.goto('/challenge/store/orders');
+      await page.goto(storePath('/orders'));
       await page.waitForSelector('text=Loading orders', { state: 'hidden' });
       const processing = page.getByText('Processing', { exact: true });
       await expect(processing.first()).toBeVisible();

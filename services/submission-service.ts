@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/db/server';
 import { createAdminClient } from '@/lib/db/admin';
 import { calculateAccuracyScore } from '@/lib/scoring';
-import { getChallengeStartCookie } from '@/lib/auth/challenge-start-cookie';
 import { hashIp, getUserAgent } from '@/lib/auth/request-meta';
 import { getUserDailyRank } from '@/services/leaderboard-service';
 import type { BugCategory, BugPage, BugSeverity } from '@/lib/bug-engine/types';
@@ -54,18 +53,7 @@ export async function createSubmission(
     correctSeverity: challenge.correct_severity,
   });
 
-  const startCookie = await getChallengeStartCookie();
-  const submittedAt = new Date();
-  let startedAt: string | null = null;
-  let durationSeconds: number | null = null;
-
-  if (startCookie && startCookie.challengeId === challenge.id) {
-    startedAt = startCookie.startedAt;
-    durationSeconds = Math.floor(
-      (submittedAt.getTime() - new Date(startCookie.startedAt).getTime()) / 1000
-    );
-  }
-
+  const submittedAt = new Date().toISOString();
   const ipHash = await hashIp();
   const userAgent = await getUserAgent();
 
@@ -77,9 +65,7 @@ export async function createSubmission(
     severity: input.severity,
     description: input.description,
     accuracy_score: score,
-    started_at: startedAt,
-    submitted_at: submittedAt.toISOString(),
-    submission_duration_seconds: durationSeconds,
+    submitted_at: submittedAt,
     ip_hash: ipHash,
     user_agent: userAgent,
   });

@@ -2,18 +2,22 @@
 
 Use these tests to **reveal today's injected bug** (from Supabase) and **verify it behaves as expected** in ShopVerse. This is for your own QA — not for players.
 
+For **player-facing** automation (ShopVerse only, no service role key), see [PLAYER_TESTING.md](./PLAYER_TESTING.md) and `npm run test:player`.
+
+When BugRace and ShopVerse are deployed separately, set `SHOPVERSE_URL` in `.env.test.local` (or `PLAYWRIGHT_BASE_URL` for a single local dev server). QA tests log into ShopVerse directly — no BugRace login or challenge start step.
+
 ## What the tests do
 
 | Test file | Purpose |
 |-----------|---------|
 | `tests/qa/todays-bug.spec.ts` | Fetches today's `bug_id` from `daily_challenges`, prints full metadata, then runs an automated check (or manual steps) in the store |
-| `tests/smoke/platform-flow.spec.ts` | Quick sanity check: platform login → start challenge → ShopVerse catalog |
+| `tests/smoke/platform-flow.spec.ts` | Quick sanity check: ShopVerse login → catalog (no BugRace login required) |
 
 ## Prerequisites
 
 1. **Running app** — local (`npm run dev`) or deployed URL
 2. **Seeded database** — today's row in `daily_challenges` with `status = OPEN` (`npm run seed`)
-3. **Platform test account** — a BugRace user that has **not** submitted today's challenge yet
+3. **Platform test account** — only needed if you test BugRace submit flows; ShopVerse QA uses store test accounts (`alice` / `Password123`)
 4. **Supabase service role key** — only used in tests to read `bug_id` (never expose to the client app)
 
 ## Setup (one time)
@@ -49,9 +53,9 @@ PLAYWRIGHT_BASE_URL=https://your-app.vercel.app
 
 Use the same Supabase project as the deployed app.
 
-### 3. Register a dedicated QA user (recommended)
+### 3. Register a dedicated QA user (optional)
 
-Create a platform account only used for Playwright. If that account already submitted today's challenge, the start button is hidden and tests will fail.
+Only required for tests that submit bugs on BugRace. ShopVerse-only tests use the built-in store accounts.
 
 ## Running tests
 
@@ -64,7 +68,7 @@ npm run test:bug
 This runs `tests/qa/todays-bug.spec.ts`:
 
 1. **Reveal** — logs and annotates today's bug ID, title, page, category, severity, root cause
-2. **Verify** — logs into the platform, starts the challenge, then either:
+2. **Verify** — logs into ShopVerse, then either:
    - runs an **automated assertion** (login, catalog, cart, orders bugs), or
    - prints **manual steps** you can follow in the browser
 

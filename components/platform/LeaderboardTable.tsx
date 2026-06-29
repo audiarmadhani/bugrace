@@ -7,6 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 import type { DailyLeaderboardEntry } from '@/services/leaderboard-service';
 
 export function LeaderboardTable({
@@ -31,6 +32,7 @@ export function LeaderboardTable({
           <TableHead className="w-12">#</TableHead>
           <TableHead>Tester</TableHead>
           <TableHead className="text-right">Score</TableHead>
+          <TableHead className="text-right">Submitted</TableHead>
           <TableHead className="text-right">F1 Pts</TableHead>
         </TableRow>
       </TableHeader>
@@ -47,6 +49,9 @@ export function LeaderboardTable({
             </TableCell>
             <TableCell className="font-medium">{entry.username}</TableCell>
             <TableCell className="text-right">{entry.accuracyScore}/25</TableCell>
+            <TableCell className="text-right text-xs text-muted-foreground font-mono">
+              {format(new Date(entry.submittedAt), 'HH:mm')} UTC
+            </TableCell>
             <TableCell className="text-right font-mono">{entry.f1Points}</TableCell>
           </TableRow>
         ))}
