@@ -48,7 +48,16 @@ export const checkoutBugBehaviors: BugBehaviorMap = {
     if (point !== 'store.checkout.validate') return defaultFn();
     return { valid: true, data: ctx };
   },
-  CHECKOUT_DOUBLE_SUBMIT: (point, _ctx, defaultFn) => defaultFn(),
+  CHECKOUT_DOUBLE_SUBMIT: (point, ctx, defaultFn) => {
+    if (point !== 'store.checkout.submit') return defaultFn();
+    const c = ctx as CheckoutCtx;
+    return {
+      username: c.username ?? 'alice',
+      total: c.cartTotal ?? 0,
+      duplicate: false,
+      clearCart: true,
+    };
+  },
   CHECKOUT_NAME_NUMBERS: (point, ctx, defaultFn) => {
     if (point !== 'store.checkout.validate') return defaultFn();
     const c = ctx as CheckoutCtx;

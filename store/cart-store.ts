@@ -14,6 +14,7 @@ export type CartItem = {
 type CartState = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
+  setItems: (items: CartItem[]) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -39,6 +40,7 @@ export const useCartStore = create<CartState>()(
           return { items: [...state.items, { ...item, quantity }] };
         });
       },
+      setItems: (items) => set({ items }),
       removeItem: (productId) => {
         set((state) => ({
           items: state.items.filter((i) => i.productId !== productId),

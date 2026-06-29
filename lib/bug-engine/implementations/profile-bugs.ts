@@ -64,7 +64,10 @@ export const profileBugBehaviors: BugBehaviorMap = {
     const data = defaultFn() as Profile;
     return { ...data, username: 'alice' };
   },
-  PROFILE_EMAIL_DUPLICATE: (point, _ctx, defaultFn) => defaultFn(),
+  PROFILE_EMAIL_DUPLICATE: (point, ctx, defaultFn) => {
+    if (point !== 'store.profile.update') return defaultFn();
+    return { success: true, skipDuplicateCheck: true };
+  },
   PROFILE_LAST_NAME_TRUNCATED: (point, ctx, defaultFn) => {
     if (point !== 'store.profile.update') return defaultFn();
     const c = ctx as ProfileCtx;

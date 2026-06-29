@@ -18,7 +18,19 @@ export const productBugBehaviors: BugBehaviorMap = {
     const q = (ctx as ProductCtx).quantity ?? 1;
     return q > -100 ? q : 1;
   },
-  PRODUCT_EXCEEDS_STOCK: (point, _ctx, defaultFn) => defaultFn(),
+  PRODUCT_EXCEEDS_STOCK: (point, ctx, defaultFn) => {
+    const c = ctx as ProductCtx;
+    if (point === 'store.product.quantity') {
+      const q = c.quantity ?? 1;
+      return q > 0 ? q : defaultFn();
+    }
+    if (point !== 'store.product.addToCart') return defaultFn();
+    return {
+      success: true,
+      unitPrice: c.price ?? 0,
+      added: true,
+    };
+  },
   PRODUCT_PRICE_DISPLAY_TAX: (point, ctx, defaultFn) => {
     if (point !== 'store.product.addToCart') return defaultFn();
     const c = ctx as ProductCtx;

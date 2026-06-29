@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { storeLogoutAction } from '@/app/actions/store';
-import { Button } from '@/components/ui/button';
+import { StoreLogoutButton } from '@/components/store/StoreLogoutButton';
 
 const links = [
   { href: '/challenge/store/catalog', label: 'Home' },
@@ -29,11 +28,7 @@ export function StoreNavbar({ username }: { username: string }) {
         </nav>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500 hidden sm:inline">{username}</span>
-          <form action={storeLogoutAction}>
-            <Button variant="outline" size="sm" type="submit">
-              Logout
-            </Button>
-          </form>
+          <StoreLogoutButton />
         </div>
       </div>
     </header>

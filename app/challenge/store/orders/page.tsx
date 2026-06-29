@@ -7,15 +7,31 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import type { ChallengeOrder } from '@/services/challenge-data-service';
 
+const ORDERS_CACHE_KEY = 'bugrace_orders_cache';
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<ChallengeOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cachedOrders] = useState<ChallengeOrder[] | null>(null);
+  const [cachedOrders, setCachedOrders] = useState<ChallengeOrder[] | null>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(ORDERS_CACHE_KEY);
+    if (raw) {
+      try {
+        setCachedOrders(JSON.parse(raw) as ChallengeOrder[]);
+      } catch {
+        setCachedOrders(null);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     async function load() {
       const data = await getStoreOrdersAction(cachedOrders);
       setOrders(data);
+      if (data.length > 0) {
+        sessionStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify(data));
+      }
       setLoading(false);
     }
     load();

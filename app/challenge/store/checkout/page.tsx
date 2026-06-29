@@ -1,10 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart-store';
 import { checkoutAction, calculateCartTotalAction } from '@/app/actions/store';
@@ -13,26 +10,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const schema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email(),
-  address: z.string().min(5),
-  city: z.string().min(2),
-  postalCode: z.string().min(3),
-  phone: z.string().min(7),
-});
-
-type FormData = z.infer<typeof schema>;
-
 export default function CheckoutPage() {
   const router = useRouter();
+  const idempotencyKey = useId();
   const { items, clearCart } = useCartStore();
   const [total, setTotal] = useState(0);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function calc() {
@@ -63,7 +46,19 @@ export default function CheckoutPage() {
     );
   }
 
-  async function onSubmit(data: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSubmitting(true);
+    const fd = new FormData(e.currentTarget);
+    const data = {
+      fullName: String(fd.get('fullName') ?? ''),
+      email: String(fd.get('email') ?? ''),
+      address: String(fd.get('address') ?? ''),
+      city: String(fd.get('city') ?? ''),
+      postalCode: String(fd.get('postalCode') ?? ''),
+      phone: String(fd.get('phone') ?? ''),
+    };
+
     const result = await checkoutAction(
       items.map((i) => ({
         productId: i.productId,
@@ -71,8 +66,11 @@ export default function CheckoutPage() {
         unitPrice: i.unitPrice,
       })),
       total,
-      data
+      data,
+      idempotencyKey
     );
+
+    setSubmitting(false);
 
     if (result.error) {
       toast.error(result.error);
@@ -94,7 +92,7 @@ export default function CheckoutPage() {
             <CardTitle>Checkout</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {(
                 [
                   ['fullName', 'Full Name'],
@@ -109,20 +107,17 @@ export default function CheckoutPage() {
                   <Label htmlFor={field}>{label}</Label>
                   <Input
                     id={field}
+                    name={field}
                     type={field === 'email' ? 'email' : 'text'}
-                    {...register(field)}
                   />
-                  {errors[field] && (
-                    <p className="text-xs text-red-600">{errors[field]?.message}</p>
-                  )}
                 </div>
               ))}
               <Button
                 type="submit"
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
-                disabled={isSubmitting}
+                disabled={submitting}
               >
-                {isSubmitting ? 'Processing...' : 'Place Order'}
+                {submitting ? 'Processing...' : 'Place Order'}
               </Button>
             </form>
           </CardContent>

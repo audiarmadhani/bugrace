@@ -6,6 +6,8 @@ type CatalogCtx = {
   query?: string;
   category?: string;
   sort?: string;
+  priceMin?: number;
+  priceMax?: number;
 };
 
 export const catalogBugBehaviors: BugBehaviorMap = {
@@ -72,7 +74,14 @@ export const catalogBugBehaviors: BugBehaviorMap = {
     }
     return defaultFn();
   },
-  CATALOG_PRICE_FILTER_BYPASS: (point, _ctx, defaultFn) => defaultFn(),
+  CATALOG_PRICE_FILTER_BYPASS: (point, ctx, defaultFn) => {
+    if (point !== 'store.catalog.filter') return defaultFn();
+    const c = ctx as CatalogCtx & { priceMin?: number; priceMax?: number };
+    if (c.priceMin !== undefined || c.priceMax !== undefined) {
+      return c.products ?? [];
+    }
+    return defaultFn();
+  },
   CATALOG_SEARCH_SPECIAL_CHARS: (point, ctx, defaultFn) => {
     if (point !== 'store.catalog.search') return defaultFn();
     const c = ctx as CatalogCtx;

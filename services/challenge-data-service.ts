@@ -7,6 +7,8 @@ export type ChallengeProfile = {
   firstName: string;
   lastName: string;
   email: string;
+  password?: string;
+  emailEditable?: boolean;
 };
 
 export type ChallengeOrder = {
@@ -37,7 +39,7 @@ function mapProfile(row: {
 export async function getChallengeProfile(
   activeBug: string | null,
   username: string,
-  cachedProfile?: ChallengeProfile | null
+  cachedProfile?: Pick<ChallengeProfile, 'firstName' | 'lastName' | 'email'> | null
 ): Promise<ChallengeProfile | null> {
   const admin = createAdminClient();
   const { data } = await admin
@@ -57,13 +59,15 @@ export async function getChallengeProfile(
   );
 
   if (typeof result === 'object' && result !== null && 'username' in result) {
-    const r = result as ChallengeProfile & { password?: string };
+    const r = result as ChallengeProfile & { password?: string; emailEditable?: boolean };
     return {
       id: r.id ?? profile.id,
       username: r.username,
       firstName: r.firstName ?? profile.firstName,
       lastName: r.lastName ?? profile.lastName,
       email: r.email ?? profile.email,
+      password: r.password,
+      emailEditable: r.emailEditable ?? false,
     };
   }
   return profile;
@@ -79,7 +83,13 @@ export async function updateChallengeProfile(
     'store.profile.update',
     () => ({ success: true, persisted: true }),
     { sessionUsername: username, updates: { ...updates, username } }
-  ) as { success: boolean; persisted?: boolean; username?: string; lastName?: string };
+  ) as {
+    success: boolean;
+    persisted?: boolean;
+    username?: string;
+    lastName?: string;
+    skipDuplicateCheck?: boolean;
+  };
 
   if (injected.persisted === false) {
     return { success: true };
@@ -90,6 +100,20 @@ export async function updateChallengeProfile(
     injected.lastName !== undefined ? injected.lastName : updates.lastName;
 
   const admin = createAdminClient();
+
+  if (!injected.skipDuplicateCheck && updates.email) {
+    const { data: existing } = await admin
+      .from('challenge_profiles')
+      .select('username')
+      .eq('email', updates.email)
+      .neq('username', targetUser)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: false, error: 'Email is already in use by another account.' };
+    }
+  }
+
   const { error } = await admin
     .from('challenge_profiles')
     .update({
@@ -161,24 +185,48 @@ export async function getOrdersForUser(
   }));
 }
 
+const recentCheckoutKeys = new Set<string>();
+
 export async function createChallengeOrder(
   activeBug: string | null,
   username: string,
   items: { productId: string; quantity: number; unitPrice: number }[],
-  cartTotal: number
+  cartTotal: number,
+  idempotencyKey?: string
 ): Promise<{ orderId: string; clearCart: boolean }> {
   const submitResult = applyInjection(
     activeBug,
     'store.checkout.submit',
-    () => ({ username, total: cartTotal, duplicate: false, clearCart: true }),
-    { username, cartTotal, items }
+    () => {
+      if (idempotencyKey && recentCheckoutKeys.has(idempotencyKey)) {
+        return {
+          username,
+          total: cartTotal,
+          duplicate: false,
+          clearCart: true,
+          skipped: true as const,
+        };
+      }
+      if (idempotencyKey) {
+        recentCheckoutKeys.add(idempotencyKey);
+      }
+      return { username, total: cartTotal, duplicate: false, clearCart: true };
+    },
+    { username, cartTotal, items, idempotencyKey }
   ) as {
     username: string;
     total: number;
     duplicate?: boolean;
     clearCart?: boolean;
-    orders?: unknown[];
+    skipped?: boolean;
   };
+
+  if (submitResult.skipped) {
+    return {
+      orderId: 'existing',
+      clearCart: submitResult.clearCart !== false,
+    };
+  }
 
   const admin = createAdminClient();
   const orderUser = submitResult.username;

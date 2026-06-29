@@ -1,9 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { toast } from 'sonner';
 import { getStoreProfileAction, updateStoreProfileAction } from '@/app/actions/store';
 import { Button } from '@/components/ui/button';
@@ -12,58 +9,70 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const schema = z.object({
-  firstName: z.string().min(1, 'First name required'),
-  lastName: z.string().min(1, 'Last name required'),
-  email: z.string().email(),
-});
-
-type FormData = z.infer<typeof schema>;
+type ProfileForm = {
+  firstName: string;
+  lastName: string;
+  email: string;
+};
 
 export default function StoreProfilePage() {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState<string | null>(null);
+  const [emailEditable, setEmailEditable] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [cachedProfile, setCachedProfile] = useState<FormData | null>(null);
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const [cachedProfile, setCachedProfile] = useState<ProfileForm | null>(null);
+  const [form, setForm] = useState<ProfileForm>({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     async function load() {
-      const profile = await getStoreProfileAction(null);
+      const profile = await getStoreProfileAction(cachedProfile);
       if (!mounted || !profile) {
         setLoading(false);
         return;
       }
       setUsername(profile.username);
-      reset({
+      setPassword(profile.password ?? null);
+      setEmailEditable(profile.emailEditable === true);
+      const next = {
         firstName: profile.firstName,
         lastName: profile.lastName,
         email: profile.email,
-      });
-      setCachedProfile({
-        firstName: profile.firstName,
-        lastName: profile.lastName,
-        email: profile.email,
-      });
+      };
+      setForm(next);
+      if (!cachedProfile) {
+        setCachedProfile(next);
+      }
       setLoading(false);
     }
     load();
     return () => { mounted = false; };
-  }, [reset]);
+  }, [cachedProfile]);
 
-  async function onSubmit(data: FormData) {
-    const result = await updateStoreProfileAction(data);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    const result = await updateStoreProfileAction(form);
+    setSubmitting(false);
     if (result.error) {
       toast.error(result.error);
       return;
     }
     toast.success('Profile updated successfully.');
-    setCachedProfile(data);
+    const refreshed = await getStoreProfileAction(cachedProfile);
+    if (refreshed) {
+      setForm({
+        firstName: refreshed.firstName,
+        lastName: refreshed.lastName,
+        email: refreshed.email,
+      });
+      setPassword(refreshed.password ?? null);
+    }
   }
 
   if (loading) {
@@ -82,34 +91,49 @@ export default function StoreProfilePage() {
           <CardTitle>Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Username</Label>
               <Input value={username} disabled className="bg-gray-50" />
             </div>
+            {password !== null && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" value={password} disabled className="bg-red-50 font-mono" />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" {...register('firstName')} />
-              {errors.firstName && (
-                <p className="text-xs text-red-600">{errors.firstName.message}</p>
-              )}
+              <Input
+                id="firstName"
+                value={form.firstName}
+                onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" {...register('lastName')} />
-              {errors.lastName && (
-                <p className="text-xs text-red-600">{errors.lastName.message}</p>
-              )}
+              <Input
+                id="lastName"
+                value={form.lastName}
+                onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register('email')} />
-              {errors.email && (
-                <p className="text-xs text-red-600">{errors.email.message}</p>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                disabled={!emailEditable}
+                className={!emailEditable ? 'bg-gray-50' : undefined}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+              {!emailEditable && (
+                <p className="text-xs text-gray-500">Contact support to change your email.</p>
               )}
             </div>
-            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </form>
         </CardContent>

@@ -9,6 +9,7 @@ import { filterCatalogAction } from '@/app/actions/store';
 import { useCartStore } from '@/store/cart-store';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -25,6 +26,8 @@ export default function CatalogPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
   const [sort, setSort] = useState('default');
+  const [priceMin, setPriceMin] = useState('');
+  const [priceMax, setPriceMax] = useState('');
   const [isPending, startTransition] = useTransition();
   const addItem = useCartStore((s) => s.addItem);
 
@@ -34,10 +37,12 @@ export default function CatalogPage() {
         query: query || undefined,
         category: category !== 'all' ? category : undefined,
         sort: sort !== 'default' ? sort : undefined,
+        priceMin: priceMin ? Number(priceMin) : undefined,
+        priceMax: priceMax ? Number(priceMax) : undefined,
       });
       setProducts(filtered as Product[]);
     });
-  }, [query, category, sort]);
+  }, [query, category, sort, priceMin, priceMax]);
 
   return (
     <div className="space-y-6">
@@ -46,42 +51,70 @@ export default function CatalogPage() {
         <p className="text-gray-500">Browse our collection</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Input
-          placeholder="Search products..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="sm:max-w-xs"
-        />
-        <Select value={category} onValueChange={(v) => setCategory(v ?? 'all')}>
-          <SelectTrigger className="sm:w-40">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {PRODUCT_CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={sort} onValueChange={(v) => setSort(v ?? 'default')}>
-          <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            <SelectItem value="price-asc">Price: Low to High</SelectItem>
-            <SelectItem value="price-desc">Price: High to Low</SelectItem>
-            <SelectItem value="rating">Highest Rated</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Input
+            placeholder="Search products..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="sm:max-w-xs"
+          />
+          <Select value={category} onValueChange={(v) => setCategory(v ?? 'all')}>
+            <SelectTrigger className="sm:w-40">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {PRODUCT_CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={(v) => setSort(v ?? 'default')}>
+            <SelectTrigger className="sm:w-48">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default</SelectItem>
+              <SelectItem value="price-asc">Price: Low to High</SelectItem>
+              <SelectItem value="price-desc">Price: High to Low</SelectItem>
+              <SelectItem value="rating">Highest Rated</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 items-end">
+          <div className="space-y-1">
+            <Label htmlFor="priceMin" className="text-xs text-gray-500">Min price</Label>
+            <Input
+              id="priceMin"
+              type="number"
+              min={0}
+              placeholder="0"
+              value={priceMin}
+              onChange={(e) => setPriceMin(e.target.value)}
+              className="sm:w-28"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="priceMax" className="text-xs text-gray-500">Max price</Label>
+            <Input
+              id="priceMax"
+              type="number"
+              min={0}
+              placeholder="Any"
+              value={priceMax}
+              onChange={(e) => setPriceMax(e.target.value)}
+              className="sm:w-28"
+            />
+          </div>
+        </div>
       </div>
 
       {isPending && <p className="text-sm text-gray-400">Updating...</p>}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {products.map((product) => (
-          <Card key={product.id} className="overflow-hidden hover:shadow-md transition-shadow">
+        {products.map((product, index) => (
+          <Card key={`${product.id}-${index}`} className="overflow-hidden hover:shadow-md transition-shadow">
             <div className="relative aspect-square bg-gray-100">
               <Image
                 src={product.image}
@@ -107,6 +140,7 @@ export default function CatalogPage() {
               <Button
                 size="sm"
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                disabled={product.stock <= 0}
                 onClick={() =>
                   addItem(
                     {

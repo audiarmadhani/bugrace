@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getProductById } from '@/data/products';
 import { useCartStore } from '@/store/cart-store';
-import { validateProductQuantityAction } from '@/app/actions/store';
+import { addToCartAction } from '@/app/actions/store';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
@@ -25,21 +25,34 @@ export default function ProductPage({
   if (!product) notFound();
 
   async function handleAddToCart() {
-    const validQty = await validateProductQuantityAction(quantity, product!.stock);
-    if (validQty === null || validQty < 1) {
-      toast.error('Invalid quantity.');
+    const result = await addToCartAction(
+      product!.id,
+      quantity,
+      product!.price,
+      product!.stock
+    );
+
+    if (result.error) {
+      toast.error(result.error);
       return;
     }
-    addItem(
-      {
-        productId: product!.id,
-        name: product!.name,
-        unitPrice: product!.price,
-        image: product!.image,
-      },
-      validQty
-    );
-    toast.success(`Added ${validQty} to cart.`);
+
+    if (result.silent) {
+      return;
+    }
+
+    if (result.success && result.quantity !== undefined) {
+      addItem(
+        {
+          productId: product!.id,
+          name: product!.name,
+          unitPrice: result.unitPrice ?? product!.price,
+          image: product!.image,
+        },
+        result.quantity
+      );
+      toast.success(`Added ${result.quantity} to cart.`);
+    }
   }
 
   return (

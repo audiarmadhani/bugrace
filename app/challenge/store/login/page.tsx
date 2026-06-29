@@ -43,6 +43,17 @@ export default function StoreLoginPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" name="password" type="password" required />
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                id="rememberMe"
+                name="rememberMe"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <Label htmlFor="rememberMe" className="font-normal cursor-pointer">
+                Remember me
+              </Label>
+            </div>
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>

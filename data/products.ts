@@ -36,6 +36,7 @@ export const PRODUCTS: Product[] = [
   { id: 'p22', name: 'Adjustable Dumbbell Set', description: 'Pair of adjustable dumbbells ranging from 5 to 52.5 lbs each.', price: 349.99, rating: 4.8, stock: 15, category: 'Sports', image: 'https://picsum.photos/seed/p22/400/400' },
   { id: 'p23', name: 'Resistance Bands Kit', description: 'Set of 5 latex resistance bands with handles, door anchor, and bag.', price: 24.99, rating: 4.3, stock: 120, category: 'Sports', image: 'https://picsum.photos/seed/p23/400/400' },
   { id: 'p24', name: 'Insulated Water Bottle', description: '32oz stainless steel vacuum insulated bottle keeps drinks cold 24 hours.', price: 34.99, rating: 4.7, stock: 85, category: 'Sports', image: 'https://picsum.photos/seed/p24/400/400' },
+  { id: 'p25', name: 'Limited Edition Film Camera', description: 'Restored 35mm point-and-shoot camera — currently unavailable for restock.', price: 189.99, rating: 4.5, stock: 0, category: 'Electronics', image: 'https://picsum.photos/seed/p25/400/400' },
 ];
 
 export function getProductById(id: string): Product | undefined {

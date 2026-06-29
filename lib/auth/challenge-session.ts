@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
 const COOKIE_NAME = 'bugrace_challenge_session';
+export const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 30;
 
 export type ChallengeSession = {
   username: string;
@@ -13,10 +14,16 @@ function getSecret() {
   return new TextEncoder().encode(secret);
 }
 
-export async function setChallengeSession(session: ChallengeSession) {
+export async function setChallengeSession(
+  session: ChallengeSession,
+  options?: { maxAge?: number }
+) {
+  const maxAge = options?.maxAge;
+  const expiresIn = maxAge ? `${maxAge}s` : '8h';
+
   const token = await new SignJWT({ ...session })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('8h')
+    .setExpirationTime(expiresIn)
     .sign(getSecret());
 
   const cookieStore = await cookies();
@@ -25,7 +32,7 @@ export async function setChallengeSession(session: ChallengeSession) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 8,
+    ...(maxAge ? { maxAge } : {}),
   });
 }
 
