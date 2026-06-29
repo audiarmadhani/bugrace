@@ -26,22 +26,36 @@ const storeInternalPrefix = '/challenge/store';
 
 const storeLoginPaths = new Set(['/login', '/challenge/store/login']);
 
-function isStoreProtectedPath(pathname: string): boolean {
-  if (storeLoginPaths.has(pathname)) return false;
-  if (pathname.startsWith('/challenge/store/') && pathname !== '/challenge/store/login') {
-    return true;
-  }
-  if (
-    pathname === '/catalog' ||
-    pathname === '/cart' ||
-    pathname === '/checkout' ||
-    pathname === '/orders' ||
-    pathname === '/profile' ||
-    pathname.startsWith('/product/')
-  ) {
+const storePublicPaths = new Set([
+  '/login',
+  '/catalog',
+  '/cart',
+  '/checkout',
+  '/orders',
+  '/profile',
+]);
+
+function isStorePublicPath(pathname: string): boolean {
+  if (storePublicPaths.has(pathname)) return true;
+  if (pathname.startsWith('/product/')) return true;
+  if (pathname.startsWith(`${storeInternalPrefix}/`) && pathname !== '/challenge/store/login') {
     return true;
   }
   return false;
+}
+
+function isPlatformOnlyOnStore(pathname: string): boolean {
+  if (pathname === '/register') return true;
+  if (platformOnlyPrefixes.some((prefix) => pathname.startsWith(prefix))) return true;
+  if (pathname === '/challenge' || pathname.startsWith('/challenge/')) {
+    return !pathname.startsWith(storeInternalPrefix);
+  }
+  return false;
+}
+
+function isStoreProtectedPath(pathname: string): boolean {
+  if (storeLoginPaths.has(pathname)) return false;
+  return isStorePublicPath(pathname) && pathname !== '/login' && pathname !== '/challenge/store/login';
 }
 
 export async function middleware(request: NextRequest) {
@@ -55,18 +69,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (appMode === 'store') {
-    const isPlatformAuth =
-      pathname === '/login' ||
-      pathname === '/register' ||
-      protectedRoutes.some(
-        (route) =>
-          route !== '/challenge' &&
-          (pathname === route || pathname.startsWith(`${route}/`))
-      ) ||
-      platformOnlyPrefixes.some((prefix) => pathname.startsWith(prefix));
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
 
-    if (isPlatformAuth) {
-      const target = pathname.startsWith('/api') ? getPlatformUrl() : `${getPlatformUrl()}${pathname}`;
+    if (isPlatformOnlyOnStore(pathname)) {
+      const target = pathname.startsWith('/api')
+        ? getPlatformUrl()
+        : `${getPlatformUrl()}${pathname}`;
       return NextResponse.redirect(target);
     }
   }
