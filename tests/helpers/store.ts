@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 
 const isLocal =
   (process.env.SHOPVERSE_URL ?? process.env.PLAYWRIGHT_BASE_URL ?? '').includes('127.0.0.1') ||
@@ -17,11 +18,8 @@ export async function loginStore(
   username: string,
   password: string
 ): Promise<void> {
-  const loginPath = storePath('/login');
-  if (!page.url().includes('login')) {
-    await page.goto(loginPath);
-  }
-
+  await page.goto(storePath('/login'));
+  await expect(page.getByLabel('Username')).toBeVisible();
   await page.getByLabel('Username').fill(username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign In' }).click();

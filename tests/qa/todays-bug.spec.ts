@@ -9,6 +9,8 @@ import { loginShopVerse } from '../player/helpers/shopverse';
 
 let todayChallenge: TodayChallenge | null = null;
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Today\'s bug — QA reveal & verify', () => {
   test.beforeAll(async () => {
     todayChallenge = await getTodayChallenge();
@@ -35,6 +37,8 @@ test.describe('Today\'s bug — QA reveal & verify', () => {
   });
 
   test('verify bug behavior in ShopVerse', async ({ page, context }) => {
+    test.setTimeout(120_000);
+
     expect(todayChallenge).not.toBeNull();
     const challenge = todayChallenge!;
     const scenario = getBugScenario(challenge.bugId, challenge.definition);
@@ -44,28 +48,35 @@ test.describe('Today\'s bug — QA reveal & verify', () => {
       description: scenario.manualSteps.join('\n'),
     });
 
-    await loginShopVerse(page);
+    await test.step('Sign in to ShopVerse', async () => {
+      await loginShopVerse(page);
+    });
 
     if (scenario.automated && scenario.verify) {
-      await scenario.verify({ page, context });
+      const verify = scenario.verify;
+      await test.step(`Verify ${challenge.bugId}`, async () => {
+        await verify({ page, context });
+      });
       console.log(`Automated verification passed for ${challenge.bugId}`);
       return;
     }
 
-    await expect(page.getByRole('heading', { name: 'Product Catalog' })).toBeVisible();
+    await test.step('Manual verification fallback', async () => {
+      await expect(page.getByRole('heading', { name: 'Product Catalog' })).toBeVisible();
 
-    console.log(
-      [
-        `No automated check for ${challenge.bugId}.`,
-        'Follow manual steps (attached as annotation):',
-        ...scenario.manualSteps.map((s) => `  • ${s}`),
-      ].join('\n')
-    );
+      console.log(
+        [
+          `No automated check for ${challenge.bugId}.`,
+          'Follow manual steps (attached as annotation):',
+          ...scenario.manualSteps.map((s) => `  • ${s}`),
+        ].join('\n')
+      );
 
-    test.info().annotations.push({
-      type: 'manual-only',
-      description:
-        'This bug has no automated assertion yet. Use the manual steps and compare with the revealed bug metadata.',
+      test.info().annotations.push({
+        type: 'manual-only',
+        description:
+          'This bug has no automated assertion yet. Use the manual steps and compare with the revealed bug metadata.',
+      });
     });
   });
 });

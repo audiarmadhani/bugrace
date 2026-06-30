@@ -18,7 +18,7 @@ type ProfileForm = {
 export default function StoreProfilePage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState<string | null>(null);
-  const [emailEditable, setEmailEditable] = useState(true);
+  const [emailEditable, setEmailEditable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [cachedProfile, setCachedProfile] = useState<ProfileForm | null>(null);
   const [form, setForm] = useState<ProfileForm>({

@@ -10,6 +10,7 @@ import {
   submitStoreLoginWithoutClientValidation,
 } from './store';
 import { isPersistentShopverseCookie } from './session-cookie';
+import { expectSuccessMessage, waitForProfileReady } from './waits';
 
 export type BugVerifyContext = {
   page: Page;
@@ -213,6 +214,49 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       'Bug: checkout link still works or shows item count > 0',
       '(Check cart page checkout button / server total)',
     ],
+  },
+
+  // --- Profile ---
+  PROFILE_EMAIL_READONLY_BYPASS: {
+    automated: true,
+    manualSteps: ['Open Profile', 'Bug: email field is editable (no support message)'],
+    async verify({ page }) {
+      await page.goto(storePath('/profile'));
+      await waitForProfileReady(page);
+      await expect(page.getByText('Contact support to change your email.')).toHaveCount(0);
+      const email = page.getByLabel('Email');
+      await expect.poll(async () => email.isEnabled(), { timeout: 8_000 }).toBe(true);
+    },
+  },
+  PROFILE_STALE_AFTER_UPDATE: {
+    automated: true,
+    manualSteps: [
+      'Change first name and save',
+      'Bug: form still shows old first name, but reload shows the new value',
+    ],
+    async verify({ page }) {
+      await page.goto(storePath('/profile'));
+      await waitForProfileReady(page);
+      const original = await page.getByLabel('First Name').inputValue();
+      const updated = `${original}X`;
+      await page.getByLabel('First Name').fill(updated);
+      await page.getByRole('button', { name: 'Save Changes' }).click();
+      await expectSuccessMessage(page, 'Profile updated successfully');
+
+      const firstName = page.getByLabel('First Name');
+      let formRefreshedToSavedValue = false;
+      try {
+        await expect(firstName).toHaveValue(updated, { timeout: 6_000 });
+        formRefreshedToSavedValue = true;
+      } catch {
+        // UI still stale
+      }
+      expect(formRefreshedToSavedValue).toBe(false);
+
+      await page.reload();
+      await waitForProfileReady(page);
+      await expect(firstName).toHaveValue(updated);
+    },
   },
 
   // --- Orders ---

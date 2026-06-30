@@ -49,7 +49,8 @@ export async function getTodayChallengeSafe(): Promise<SafeDailyChallenge | null
 
 export async function getTodayBugId(): Promise<string | null> {
   const today = format(new Date(), 'yyyy-MM-dd');
-  const supabase = await createClient();
+  // ShopVerse uses challenge-session cookies, not Supabase auth — anon RLS would hide today's row.
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('daily_challenges')
     .select('bug_id, status')

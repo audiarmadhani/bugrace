@@ -1,4 +1,5 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { loginStore, storePath } from '../../helpers/store';
 
 export function getShopverseUrl(): string {
   return (
@@ -13,16 +14,10 @@ export async function loginShopVerse(
   username = process.env.STORE_USERNAME ?? 'alice',
   password = process.env.STORE_PASSWORD ?? 'Password123'
 ): Promise<void> {
-  const base = getShopverseUrl();
-  const loginPath = base.includes('127.0.0.1') ? '/challenge/store/login' : '/login';
-
-  await page.goto(`${base}${loginPath}`);
-  await page.getByLabel('Username').fill(username);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign In' }).click();
-
-  const catalogPath = base.includes('127.0.0.1')
-    ? '**/challenge/store/catalog'
-    : '**/catalog';
-  await page.waitForURL(catalogPath, { timeout: 15_000 });
+  await loginStore(page, username, password);
+  await expect(page.getByRole('heading', { name: 'Product Catalog' })).toBeVisible({
+    timeout: 15_000,
+  });
 }
+
+export { storePath };

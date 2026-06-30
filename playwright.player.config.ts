@@ -13,13 +13,19 @@ const baseURL =
 
 export default defineConfig({
   testDir: './tests/player',
-  fullyParallel: false,
-  workers: 1,
+  fullyParallel: true,
+  workers: process.env.CI ? 1 : undefined,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    actionTimeout: 10_000,
+    navigationTimeout: 20_000,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });

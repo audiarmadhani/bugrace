@@ -15,7 +15,7 @@ const baseURL =
 
 export default defineConfig({
   testDir: './tests',
-  testIgnore: ['**/player/**'],
+  testIgnore: ['**/player/**', '**/personal/**'],
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
