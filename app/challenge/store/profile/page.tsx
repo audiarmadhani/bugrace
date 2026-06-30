@@ -66,11 +66,13 @@ export default function StoreProfilePage() {
     toast.success('Profile updated successfully.');
     const refreshed = await getStoreProfileAction(cachedProfile);
     if (refreshed) {
-      setForm({
+      const next = {
         firstName: refreshed.firstName,
         lastName: refreshed.lastName,
         email: refreshed.email,
-      });
+      };
+      setForm(next);
+      setCachedProfile(next);
       setPassword(refreshed.password ?? null);
     }
   }

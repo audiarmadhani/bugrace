@@ -25,11 +25,16 @@ export default function ProductPage({
   if (!product) notFound();
 
   async function handleAddToCart() {
+    const existingCart = useCartStore
+      .getState()
+      .items.map((item) => ({ productId: item.productId, quantity: item.quantity }));
+
     const result = await addToCartAction(
       product!.id,
       quantity,
       product!.price,
-      product!.stock
+      product!.stock,
+      existingCart
     );
 
     if (result.error) {

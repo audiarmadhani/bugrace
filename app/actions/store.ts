@@ -26,6 +26,7 @@ import {
   updateChallengeProfile,
   type ChallengeProfile,
 } from '@/services/challenge-data-service';
+import { validateAddToCartQuantity, validateCartLineQuantity, MAX_DISTINCT_CART_ITEMS, type CartLineRef } from '@/lib/store/cart-limits';
 
 type CartLine = { productId: string; unitPrice: number; quantity: number };
 
@@ -348,7 +349,7 @@ export async function updateCartQuantityAction(
   const validQty = applyInjection(
     activeBug,
     'store.cart.updateQuantity',
-    () => (quantity >= 1 && quantity <= 99 ? quantity : null),
+    () => validateCartLineQuantity(productId, quantity),
     { items, productId, quantity }
   ) as number | { keepItem: boolean; quantity: number } | null;
 
@@ -372,13 +373,18 @@ export async function updateCartQuantityAction(
   return { items: nextItems, total };
 }
 
-export async function validateProductQuantityAction(quantity: number, stock: number) {
+export async function validateProductQuantityAction(
+  quantity: number,
+  stock: number,
+  productId?: string,
+  existingCart: CartLineRef[] = []
+) {
   const activeBug = await getTodayBugId();
   return applyInjection(
     activeBug,
     'store.product.quantity',
-    () => (quantity >= 1 && quantity <= stock && quantity <= 99 ? quantity : null),
-    { quantity, stock }
+    () => validateAddToCartQuantity(productId ?? '', quantity, stock, existingCart),
+    { quantity, stock, productId, existingCart }
   ) as number | null;
 }
 
@@ -386,18 +392,27 @@ export async function addToCartAction(
   productId: string,
   quantity: number,
   unitPrice: number,
-  stock: number
+  stock: number,
+  existingCart: CartLineRef[] = []
 ) {
   const activeBug = await getTodayBugId();
 
   const validQty = applyInjection(
     activeBug,
     'store.product.quantity',
-    () => (quantity >= 1 && quantity <= stock && quantity <= 99 ? quantity : null),
-    { quantity, stock, productId }
+    () => validateAddToCartQuantity(productId, quantity, stock, existingCart),
+    { quantity, stock, productId, existingCart }
   ) as number | null;
 
   if (validQty === null && quantity !== 0) {
+    const existingQty =
+      existingCart.find((line) => line.productId === productId)?.quantity ?? 0;
+    if (existingQty === 0 && existingCart.length >= MAX_DISTINCT_CART_ITEMS) {
+      return { error: 'Cart item limit reached.' };
+    }
+    if (existingQty + quantity > stock) {
+      return { error: 'Not enough stock available.' };
+    }
     return { error: 'Invalid quantity.' };
   }
 

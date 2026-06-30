@@ -244,6 +244,34 @@ const SCENARIOS: Partial<Record<string, BugScenario>> = {
       expect(total).toBe(await orderRows.count());
     },
   },
+  ORDERS_TOTAL_MISMATCH: {
+    automated: true,
+    manualSteps: [
+      'Place an order with quantity greater than 1',
+      'Bug: order list total shows sum of unit prices without multiplying by quantity',
+    ],
+    async verify({ page }) {
+      await loginStore(page, 'alice', 'Password123');
+      await addFirstProductToCart(page);
+      await setCartItemQuantity(page, 2);
+      await page.goto(storePath('/checkout'));
+      await page.getByLabel('Full Name').fill('Total Test');
+      await page.getByLabel('Email').fill('total@test.com');
+      await page.getByLabel('Address').fill('1 Test Street');
+      await page.getByLabel('City').fill('Austin');
+      await page.getByLabel('Postal Code').fill('78701');
+      await page.getByLabel('Phone Number').fill('555-0100');
+      await page.getByRole('button', { name: 'Place Order' }).click();
+      await page.waitForURL(`**${storePath('/orders')}`, { timeout: 20_000 });
+      await page.waitForSelector('text=Loading orders', { state: 'hidden' });
+
+      const product = PRODUCTS[0]!;
+      const displayedText = await page.locator('.text-emerald-700').first().textContent();
+      const displayed = Number.parseFloat(displayedText?.replace('$', '') ?? '0');
+      expect(displayed).toBeCloseTo(product.price, 1);
+      expect(displayed).toBeLessThan(product.price * 2 * 0.9);
+    },
+  },
 };
 
 export function getBugScenario(bugId: string, definition?: BugDefinition): BugScenario {

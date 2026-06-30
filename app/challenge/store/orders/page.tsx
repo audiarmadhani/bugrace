@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import type { ChallengeOrder } from '@/services/challenge-data-service';
 
-const ORDERS_CACHE_KEY = 'bugrace_orders_cache';
+import { ORDERS_CACHE_KEY } from '@/lib/store/orders-cache';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<ChallengeOrder[]>([]);
@@ -57,7 +57,7 @@ export default function OrdersPage() {
             <Card key={order.id}>
               <CardContent className="p-4 flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <p className="font-mono text-sm text-gray-500">#{order.id.slice(0, 8)}</p>
+                  <p className="font-mono text-sm text-gray-500 break-all">#{order.id}</p>
                   <p className="text-sm text-gray-600">
                     {format(new Date(order.createdAt), 'MMM d, yyyy')}
                   </p>

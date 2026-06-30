@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/db/admin';
 import { applyInjection } from '@/lib/bug-engine/injection-points';
+import { validateProfileFields } from '@/lib/store/profile-validation';
 
 export type ChallengeProfile = {
   id: string;
@@ -81,31 +82,54 @@ export async function updateChallengeProfile(
   const injected = applyInjection(
     activeBug,
     'store.profile.update',
-    () => ({ success: true, persisted: true }),
+    () => {
+      const validation = validateProfileFields({
+        firstName: updates.firstName ?? '',
+        lastName: updates.lastName ?? '',
+        email: updates.email ?? '',
+      });
+      if (!validation.ok) {
+        return { success: false, error: validation.error, persisted: false as const };
+      }
+      return {
+        success: true,
+        persisted: true as const,
+        updates: validation.sanitized,
+      };
+    },
     { sessionUsername: username, updates: { ...updates, username } }
   ) as {
     success: boolean;
+    error?: string;
     persisted?: boolean;
     username?: string;
     lastName?: string;
     skipDuplicateCheck?: boolean;
+    updates?: Partial<Pick<ChallengeProfile, 'firstName' | 'lastName' | 'email'>>;
+    data?: Partial<Pick<ChallengeProfile, 'firstName' | 'lastName' | 'email'>>;
   };
+
+  if (!injected.success) {
+    return { success: false, error: injected.error ?? 'Update failed.' };
+  }
 
   if (injected.persisted === false) {
     return { success: true };
   }
 
+  const fields = injected.updates ?? injected.data ?? updates;
+
   const targetUser = injected.username ?? username;
   const lastName =
-    injected.lastName !== undefined ? injected.lastName : updates.lastName;
+    injected.lastName !== undefined ? injected.lastName : fields.lastName;
 
   const admin = createAdminClient();
 
-  if (!injected.skipDuplicateCheck && updates.email) {
+  if (!injected.skipDuplicateCheck && fields.email) {
     const { data: existing } = await admin
       .from('challenge_profiles')
       .select('username')
-      .eq('email', updates.email)
+      .eq('email', fields.email)
       .neq('username', targetUser)
       .maybeSingle();
 
@@ -117,9 +141,9 @@ export async function updateChallengeProfile(
   const { error } = await admin
     .from('challenge_profiles')
     .update({
-      first_name: updates.firstName,
+      first_name: fields.firstName,
       last_name: lastName,
-      email: updates.email,
+      email: fields.email,
     })
     .eq('username', targetUser);
 

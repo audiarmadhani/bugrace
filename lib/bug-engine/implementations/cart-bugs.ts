@@ -1,4 +1,5 @@
 import type { BugBehaviorMap } from '@/lib/bug-engine/types';
+import type { CartLineRef } from '@/lib/store/cart-limits';
 
 type CartItem = { productId: string; unitPrice: number; quantity: number };
 type CartCtx = { items?: CartItem[]; productId?: string; quantity?: number };
@@ -52,5 +53,19 @@ export const cartBugBehaviors: BugBehaviorMap = {
     const items = (ctx as CartCtx).items ?? [];
     return items.slice(1);
   },
-  CART_MAX_ITEMS_BYPASS: (point, _ctx, defaultFn) => defaultFn(),
+  CART_MAX_ITEMS_BYPASS: (point, ctx, defaultFn) => {
+    const c = ctx as CartCtx & { stock?: number; productId?: string; existingCart?: CartLineRef[] };
+    if (point === 'store.product.quantity') {
+      const qty = c.quantity ?? 1;
+      const stock = c.stock ?? 0;
+      if (qty < 1 || qty > stock || qty > 99) return null;
+      return qty;
+    }
+    if (point === 'store.cart.updateQuantity') {
+      const qty = c.quantity ?? 0;
+      if (qty >= 1 && qty <= 99) return qty;
+      return null;
+    }
+    return defaultFn();
+  },
 };

@@ -3,9 +3,10 @@
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { PRODUCTS, type Product } from '@/data/products';
 import { PRODUCT_CATEGORIES } from '@/lib/constants';
-import { filterCatalogAction } from '@/app/actions/store';
+import { addToCartAction, filterCatalogAction } from '@/app/actions/store';
 import { useCartStore } from '@/store/cart-store';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export default function CatalogPage() {
   const [priceMax, setPriceMax] = useState('');
   const [isPending, startTransition] = useTransition();
   const addItem = useCartStore((s) => s.addItem);
+  const cartItems = useCartStore((s) => s.items);
 
   useEffect(() => {
     startTransition(async () => {
@@ -43,6 +45,42 @@ export default function CatalogPage() {
       setProducts(filtered as Product[]);
     });
   }, [query, category, sort, priceMin, priceMax]);
+
+  async function handleAddToCart(product: Product) {
+    const existingCart = cartItems.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
+    const result = await addToCartAction(
+      product.id,
+      1,
+      product.price,
+      product.stock,
+      existingCart
+    );
+
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    if (result.silent) {
+      return;
+    }
+
+    if (result.success && result.quantity !== undefined) {
+      addItem(
+        {
+          productId: product.id,
+          name: product.name,
+          unitPrice: result.unitPrice ?? product.price,
+          image: product.image,
+        },
+        result.quantity
+      );
+      toast.success('Added to cart.');
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -141,17 +179,7 @@ export default function CatalogPage() {
                 size="sm"
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 disabled={product.stock <= 0}
-                onClick={() =>
-                  addItem(
-                    {
-                      productId: product.id,
-                      name: product.name,
-                      unitPrice: product.price,
-                      image: product.image,
-                    },
-                    1
-                  )
-                }
+                onClick={() => handleAddToCart(product)}
               >
                 Add to Cart
               </Button>
